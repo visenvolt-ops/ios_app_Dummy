@@ -1,1 +1,27 @@
+name: Build iOS IPA
+on: [push, workflow_dispatch]
 
+jobs:
+  build:
+    runs-on: macos-13
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Compile Application
+      run: |
+        mkdir -p build/Payload/MyApp.app
+        # Компилируем под старую 32-битную архитектуру iOS 9
+        xcrun -sdk iphoneos clang main.m -o build/Payload/MyApp.app/MyApp -framework UIKit -framework Foundation -arch armv7 -miphoneos-version-min=9.3
+        # Копируем ресурсы
+        cp Info.plist build/Payload/MyApp.app/
+        cp Icon-60*.png build/Payload/MyApp.app/
+        # Запаковываем в IPA
+        cd build
+        zip -r MyApp.ipa Payload
+
+    - name: Upload IPA Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: MyApp-IPA
+        path: build/MyApp.ipa
